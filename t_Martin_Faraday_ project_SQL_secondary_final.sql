@@ -12,3 +12,6 @@ FROM countries c
 JOIN economies e 
 	ON c.country = e.country
 ;
+
+SELECT *
+FROM t_Martin_Faraday_project_SQL_secondary_final;
