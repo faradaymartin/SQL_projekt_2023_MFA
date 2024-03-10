@@ -1,59 +1,68 @@
 
--- Rostou v průběhu let mzdy ve všech odvětvích, nebo v některých klesají?
+-- task_3: 
+/* Která kategorie potravin zdražuje nejpomaleji (je u ní nejnižší percentuální meziroční nárůst)?
+*/ 
 
-SELECT industry_branch_code, industri_name, YEAR(date_from) AS year, AVG(value) AS average_payroll
-FROM t_martin_faraday_project_sql_primary_final tmfpspf
-WHERE payroll_value_type_code = 5958
-GROUP BY industry_branch_code, industri_name, YEAR(date_from)
-ORDER BY industry_branch_code, YEAR(date_from);
+-- SROVNÁNÍ CEN POTRAVIN V LETECH
 
+SELECT
+    kategorie_potravin,
+    rok,
+    AVG(prumerna_cena) AS PrumernaCena
+FROM
+    t_Martin_Faraday_project_SQL_primary_final2
+GROUP BY
+    kategorie_potravin,
+    rok
+ORDER BY
+    kategorie_potravin,
+    rok;
+    
+-- MEZIROČNÍ PERCENTNÍ ROZDÍL 
+   
+SELECT
+    kategorie_potravin,
+    rok,
+    PrumernaCena,
+    PredchoziPrumernaCena,
+    (PrumernaCena - PredchoziPrumernaCena) / PredchoziPrumernaCena * 100 AS ZmenaPercent
+FROM
+    (
+        SELECT
+            kategorie_potravin,
+            rok,
+            AVG(prumerna_cena) AS PrumernaCena,
+            LAG(AVG(Prumerna_Cena)) OVER (PARTITION BY kategorie_potravin ORDER BY rok) AS PredchoziPrumernaCena
+        FROM
+            t_Martin_Faraday_project_SQL_primary_final2
+        GROUP BY
+            kategorie_potravin,
+            rok
+    ) AS Data
+ORDER BY
+    kategorie_potravin,
+    rok;
 
-SELECT t1.industri_name, t1.year, t1.average_payroll,
-	((t1.average_payroll - t2.average_payroll) / t2.average_payroll) * 100 AS percentage_difference
-FROM 
-	(
-	SELECT industry_branch_code, industri_name, YEAR(date_from) AS year, AVG(value) AS average_payroll
-	FROM t_martin_faraday_project_sql_primary_final tmfpspf
-	WHERE payroll_value_type_code = 5958
-	GROUP BY industry_branch_code, industri_name, YEAR(date_from)
-	ORDER BY industry_branch_code, YEAR(date_from)
-	)t1
-JOIN (
-	SELECT industry_branch_code, industri_name, YEAR(date_from) AS year, AVG(value) AS average_payroll
-	FROM t_martin_faraday_project_sql_primary_final tmfpspf
-	WHERE payroll_value_type_code = 5958
-	GROUP BY industry_branch_code, industri_name, YEAR(date_from)
-	ORDER BY industry_branch_code, YEAR(date_from)
-	)t2 ON t1.industri_name = t2.industri_name AND t1.year = t2.year + 1
-ORDER BY t1.industri_name, t1.year ASC  
-;
-
-SELECT industry_branch_code, industri_name, YEAR(date_from) AS year, MIN(value) AS min_payroll_increase
-FROM t_martin_faraday_project_sql_primary_final tmfpspf
-WHERE payroll_value_type_code = 5958
-GROUP BY industry_branch_code, industri_name, YEAR(date_from)
-ORDER BY industry_branch_code, YEAR(date_from)
-;
-
-
-SELECT t1.industri_name, t1.year, t1.average_payroll,
-	((t1.average_payroll - t2.average_payroll) / t2.average_payroll) * 100 AS percentage_difference
-FROM 
-	(
-	SELECT industry_branch_code, industri_name, YEAR(date_from) AS year, AVG(value) AS average_payroll
-	FROM t_martin_faraday_project_sql_primary_final tmfpspf
-	WHERE payroll_value_type_code = 5958
-	GROUP BY industry_branch_code, industri_name, YEAR(date_from)
-	ORDER BY industry_branch_code, YEAR(date_from)
-	)t1
-JOIN (
-	SELECT industry_branch_code, industri_name, YEAR(date_from) AS year, AVG(value) AS average_payroll
-	FROM t_martin_faraday_project_sql_primary_final tmfpspf
-	WHERE payroll_value_type_code = 5958
-	GROUP BY industry_branch_code, industri_name, YEAR(date_from)
-	ORDER BY industry_branch_code, YEAR(date_from)
-	)t2 ON t1.industri_name = t2.industri_name AND t1.year = t2.year + 1
-WHERE ((t1.average_payroll - t2.average_payroll) / t2.average_payroll) * 100 < 0
-ORDER BY t1.industri_name ASC
-;
-percentage_difference, t1.YEAR, 
+   
+-- FINÁLNÍ VÝSLEDEK
+   
+WITH PrumernaZmena AS (
+    SELECT
+        kategorie_potravin,
+        AVG(prumerna_cena) AS PrumernaCena,
+        LAG(AVG(prumerna_cena)) OVER (PARTITION BY kategorie_potravin ORDER BY rok) AS PredchoziPrumernaCena
+    FROM
+        t_Martin_Faraday_project_SQL_primary_final2
+    GROUP BY
+        kategorie_potravin
+)
+SELECT
+    kategorie_potravin,
+    PrumernaCena,
+    PredchoziPrumernaCena,
+    (PrumernaCena - PredchoziPrumernaCena) / PredchoziPrumernaCena * 100 AS ZmenaPercent
+FROM
+    PrumernaZmena
+ORDER BY
+    ZmenaPercent ASC
+LIMIT 1;
